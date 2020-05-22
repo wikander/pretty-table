@@ -36,6 +36,9 @@ export default class PrettyTable {
   }
 
   async write(table: any[][]): Promise<void> {
+    if (table.some((row) => row.length !== table[0].length)) {
+      throw new RangeError("All rows must have equal length.");
+    }
     const widths: number[] = [];
 
     for (let row of table) {

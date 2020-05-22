@@ -1,4 +1,7 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import {
+  assertEquals,
+  assertThrowsAsync,
+} from "https://deno.land/std/testing/asserts.ts";
 import Table from "./pretty-table.ts";
 
 interface F {
@@ -145,16 +148,6 @@ Deno.test("missing value in cell", async () => {
   const f = await createFile();
   const t = new Table({ output: f.file });
 
-  await t.write([["a", "b"], ["c"], ["d", "e"]]);
-
-  const tableText = await readFileContent(f);
-
-  // prettier-ignore
-  assertEquals(
-      tableText,
-`\
-a b
-c  
-d e\
-`);
+  assertThrowsAsync(() => t.write([["a", "b"], ["c"], ["d", "e"]]));
+  f.file.close();
 });
