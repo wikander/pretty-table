@@ -5,7 +5,7 @@ import { OrderWhich } from "./model/order-which.ts";
 export default class PrettyTable {
   private readonly conf: PrettyTableConfigWithDefaults;
 
-  constructor(conf: PrettyTableConfig) {
+  constructor(conf: PrettyTableConfig = {}) {
     this.conf = Object.assign({}, conf) as PrettyTableConfigWithDefaults;
     this.conf.output = conf.output ?? Deno.stdout;
     this.conf.spacing = conf.spacing ?? 1;
@@ -17,6 +17,88 @@ export default class PrettyTable {
     }
 
     this.conf.border = conf.border ?? false;
+  }
+
+  public async write(table: any[][]): Promise<void> {
+    if (table.some((row) => row.length !== table[0].length)) {
+      throw new RangeError("All rows must have equal length.");
+    }
+
+    const widths: number[] = this.calculateRowWidths(table);
+
+    for (let [i, row] of table.entries()) {
+      if (this.whichInOrder(i, table) !== OrderWhich.First) {
+        await this.newLine();
+      }
+
+      if (this.conf.border) {
+        if (this.whichInOrder(i, table) === OrderWhich.First) {
+          await this.writeBorderRow(
+            widths,
+            OrderWhich.First,
+            Border.TopRight,
+            Border.TopLeft
+          );
+        } else {
+          await this.writeBorderRow(
+            widths,
+            OrderWhich.Intermediate,
+            Border.VerticalRight,
+            Border.VerticalLeft
+          );
+        }
+      }
+
+      for (let [j, col] of row.entries()) {
+        if (typeof col !== "string") {
+          throw new Error("no string");
+        }
+
+        if (this.whichInOrder(j, widths) === OrderWhich.First) {
+          await this.writeCol(
+            col,
+            widths[j],
+            this.conf.border ? this.conf.padding : 0,
+            this.conf.padding,
+            " ",
+            Border.Vertical,
+            Border.Vertical
+          );
+        } else if (this.whichInOrder(j, widths) === OrderWhich.Intermediate) {
+          await this.writeCol(
+            col,
+            widths[j],
+            this.conf.border ? this.conf.padding : 0,
+            this.conf.border ? this.conf.padding : this.conf.spacing,
+            " ",
+            undefined,
+            Border.Vertical
+          );
+        } else {
+          await this.writeCol(
+            col,
+            widths[j],
+            this.conf.padding,
+            this.conf.border ? this.conf.padding : this.conf.spacing,
+            " ",
+            undefined,
+            Border.Vertical
+          );
+        }
+      }
+
+      if (this.conf.border) {
+        if (this.whichInOrder(i, table) === OrderWhich.Last) {
+          await this.writeText(`\n`);
+          await this.writeBorderRow(
+            widths,
+            OrderWhich.Last,
+            Border.BottomRight,
+            Border.BottomLeft
+          );
+        }
+      }
+    }
   }
 
   private async writeBorderRow(
@@ -102,15 +184,15 @@ export default class PrettyTable {
     await this.writeText(content);
   }
 
-  async writeText(text: string): Promise<void> {
+  private async writeText(text: string): Promise<void> {
     await this.conf.output.write(new TextEncoder().encode(text));
   }
 
-  async newLine(): Promise<void> {
+  private async newLine(): Promise<void> {
     await this.writeText("\n");
   }
 
-  calculateRowWidths(table: any[][]): number[] {
+  private calculateRowWidths(table: any[][]): number[] {
     const widths: number[] = [];
     for (let row of table) {
       for (let [index, col] of row.entries()) {
@@ -124,7 +206,7 @@ export default class PrettyTable {
     return widths;
   }
 
-  whichInOrder(i: number, total: number | any[]): OrderWhich {
+  private whichInOrder(i: number, total: number | any[]): OrderWhich {
     if (i === 0) {
       return OrderWhich.First;
     }
@@ -142,95 +224,7 @@ export default class PrettyTable {
       return OrderWhich.Last;
     }
   }
-
-  async write(table: any[][]): Promise<void> {
-    if (table.some((row) => row.length !== table[0].length)) {
-      throw new RangeError("All rows must have equal length.");
-    }
-
-    const widths: number[] = this.calculateRowWidths(table);
-
-    for (let [i, row] of table.entries()) {
-      if (this.whichInOrder(i, table) !== OrderWhich.First) {
-        await this.newLine();
-      }
-
-      if (this.conf.border) {
-        if (this.whichInOrder(i, table) === OrderWhich.First) {
-          await this.writeBorderRow(
-            widths,
-            OrderWhich.First,
-            Border.TopRight,
-            Border.TopLeft
-          );
-        } else {
-          await this.writeBorderRow(
-            widths,
-            OrderWhich.Intermediate,
-            Border.VerticalRight,
-            Border.VerticalLeft
-          );
-        }
-      }
-
-      for (let [j, col] of row.entries()) {
-        if (typeof col !== "string") {
-          throw new Error("no string");
-        }
-
-        if (this.whichInOrder(j, widths) === OrderWhich.First) {
-          await this.writeCol(
-            col,
-            widths[j],
-            this.conf.border ? this.conf.padding : 0,
-            this.conf.padding,
-            " ",
-            Border.Vertical,
-            Border.Vertical
-          );
-        } else if (this.whichInOrder(j, widths) === OrderWhich.Intermediate) {
-          await this.writeCol(
-            col,
-            widths[j],
-            this.conf.border ? this.conf.padding : 0,
-            this.conf.border ? this.conf.padding : this.conf.spacing,
-            " ",
-            undefined,
-            Border.Vertical
-          );
-        } else {
-          await this.writeCol(
-            col,
-            widths[j],
-            this.conf.padding,
-            this.conf.border ? this.conf.padding : this.conf.spacing,
-            " ",
-            undefined,
-            Border.Vertical
-          );
-        }
-      }
-
-      if (this.conf.border) {
-        if (this.whichInOrder(i, table) === OrderWhich.Last) {
-          await this.writeText(`\n`);
-          await this.writeBorderRow(
-            widths,
-            OrderWhich.Last,
-            Border.BottomRight,
-            Border.BottomLeft
-          );
-        }
-      }
-    }
-  }
 }
-
-// https://www.compart.com/en/unicode/block/U+2500
-// ┏━┳┓
-// ┃━━┃
-// ┣━╋┫
-// ┗━┻┛
 
 interface PrettyTableConfigWithDefaults {
   output: Deno.Writer & Deno.WriterSync & Deno.Closer;

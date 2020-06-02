@@ -228,6 +228,29 @@ a b
 `);
 });
 
+Deno.test("null value in cell with borders", async () => {
+  const f = await createFile();
+  const t = new Table({ output: f.file, border: true });
+
+  await t.write([
+    ["a", "b"],
+    [null, "c"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+        tableText,
+  `\
+┏━━━┳━━━┓
+┃ a ┃ b ┃
+┣━━━╋━━━┫
+┃   ┃ c ┃
+┗━━━┻━━━┛
+`);
+});
+
 Deno.test("undefined value in cell", async () => {
   const f = await createFile();
   const t = new Table({ output: f.file });
