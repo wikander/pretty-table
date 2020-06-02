@@ -48,13 +48,80 @@ h           t   \
 `);
 });
 
+Deno.test("Bordered table", async () => {
+  const f = await createFile();
+  const t = new Table({ output: f.file, border: true });
+
+  await t.write([
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["with", "border", "and"],
+    ["", "default", "padding"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+      tableText,
+  `\
+┏━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┓
+┃ hello  ┃ world   ┃ !       ┃
+┣━━━━━━━━╋━━━━━━━━━╋━━━━━━━━━┫
+┃ this   ┃ is      ┃ a       ┃
+┣━━━━━━━━╋━━━━━━━━━╋━━━━━━━━━┫
+┃ pretty ┃         ┃ table   ┃
+┣━━━━━━━━╋━━━━━━━━━╋━━━━━━━━━┫
+┃ with   ┃ border  ┃ and     ┃
+┣━━━━━━━━╋━━━━━━━━━╋━━━━━━━━━┫
+┃        ┃ default ┃ padding ┃
+┗━━━━━━━━┻━━━━━━━━━┻━━━━━━━━━┛
+`);
+});
+
+Deno.test("Bordered table with padding and spacing", async () => {
+  const f = await createFile();
+  const t = new Table({ output: f.file, border: true, padding: 3, spacing: 7 });
+
+  await t.write([
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["with", "border", "and"],
+    ["", "default", "padding"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+        tableText,
+    `\
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃   hello    ┃   world     ┃   !         ┃
+┣━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━┫
+┃   this     ┃   is        ┃   a         ┃
+┣━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━┫
+┃   pretty   ┃             ┃   table     ┃
+┣━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━┫
+┃   with     ┃   border    ┃   and       ┃
+┣━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━┫
+┃            ┃   default   ┃   padding   ┃
+┗━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━┛
+`);
+});
+
 Deno.test("Basic table with spacing", async () => {
   const f = await createFile();
   const t = new Table({ output: f.file, spacing: 3 });
 
   await t.write([
-    ["hello world", "test"],
-    ["h", "t"],
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["without", "border", "and"],
+    ["with", "spacing", "3"],
   ]);
 
   const tableText = await readFileContent(f);
@@ -63,8 +130,11 @@ Deno.test("Basic table with spacing", async () => {
   assertEquals(
       tableText,
 `\
-hello world   test
-h             t   \
+hello     world     !    
+this      is        a    
+pretty              table
+without   border    and  
+with      spacing   3    \
 `);
 });
 
@@ -73,8 +143,11 @@ Deno.test("Basic table with padding", async () => {
   const t = new Table({ output: f.file, padding: 2 });
 
   await t.write([
-    ["hello world", "test"],
-    ["h", "t"],
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["without", "border", "and"],
+    ["with", "padding", "2"],
   ]);
 
   const tableText = await readFileContent(f);
@@ -83,8 +156,39 @@ Deno.test("Basic table with padding", async () => {
   assertEquals(
         tableText,
 `\
-  hello world test  
-  h           t     \
+  hello   world   !      
+  this    is      a      
+  pretty          table  
+  without border  and    
+  with    padding 2      \
+`);
+});
+
+Deno.test("Basic table with padding and spacing", async () => {
+  const f = await createFile();
+  const t = new Table({ output: f.file, padding: 2, spacing: 3 });
+
+  await t.write([
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["without", "border", "and"],
+    ["with", "padding", "2"],
+    ["with", "spacing", "3"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+          tableText,
+  `\
+  hello     world     !      
+  this      is        a      
+  pretty              table  
+  without   border    and    
+  with      padding   2      
+  with      spacing   3      \
 `);
 });
 
