@@ -271,6 +271,24 @@ a b
 `);
 });
 
+Deno.test("Different length of rows", async () => {
+  const f = await createFile();
+  const t = new Table({ output: f.file, padding: 3 });
+
+  await t.write([["a", "b"], ["c"], ["d", "e", "f"]]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+        tableText,
+  `\
+   a b     
+   c       
+   d e f   \
+`);
+});
+
 Deno.test("missing value in cell", async () => {
   const f = await createFile();
   const t = new Table({ output: f.file });

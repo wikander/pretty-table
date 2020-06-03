@@ -2,6 +2,17 @@ import { PrettyTableConfig } from "./model/pretty-table-config.ts";
 import { Border } from "./model/border.ts";
 import { OrderWhich } from "./model/order-which.ts";
 
+interface PrettyTableConfigWithDefaults {
+  output: Deno.Writer & Deno.WriterSync & Deno.Closer;
+  spacing: number;
+  padding: number;
+  border: boolean;
+}
+
+type RawTable = any[][];
+type Table = string[][];
+type Row = string[];
+
 export default class PrettyTable {
   private readonly conf: PrettyTableConfigWithDefaults;
 
@@ -19,12 +30,9 @@ export default class PrettyTable {
     this.conf.border = conf.border ?? false;
   }
 
-  public async write(table: any[][]): Promise<void> {
-    if (table.some((row) => row.length !== table[0].length)) {
-      throw new RangeError("All rows must have equal length.");
-    }
-
-    const widths: number[] = this.calculateRowWidths(table);
+  public async write(rawTable: RawTable): Promise<void> {
+    const table = this.stringifyTable(rawTable);
+    const widths: number[] = this.calculateColWidths(table);
 
     for (let [i, row] of table.entries()) {
       if (this.whichInOrder(i, table) !== OrderWhich.First) {
@@ -161,8 +169,6 @@ export default class PrettyTable {
     beforeString: string | undefined = undefined,
     afterString: string | undefined = undefined
   ): Promise<void> {
-    content = content?.trim() ?? "";
-
     if (contentWidth) {
       content = content.padEnd(contentWidth, padString);
     }
@@ -192,18 +198,25 @@ export default class PrettyTable {
     await this.writeText("\n");
   }
 
-  private calculateRowWidths(table: any[][]): number[] {
-    const widths: number[] = [];
-    for (let row of table) {
-      for (let [index, col] of row.entries()) {
-        row[index] = (col ?? "") + "";
-        const colLength = row[index]?.length ?? 0;
-        if (!widths[index] || widths[index] < colLength) {
-          widths[index] = colLength;
-        }
+  private calculateColWidths(table: Table): number[] {
+    const tableWidth = table[0].length;
+    return table.reduce((acc: number[], row: Row) => {
+      for (let i = 0; i < tableWidth; i++) {
+        acc[i] = Math.max(acc[i], row[i].length);
       }
-    }
-    return widths;
+      return acc;
+    }, Array(tableWidth).fill(0));
+  }
+
+  private stringifyTable(table: RawTable): Table {
+    const tableWidth = table.map((row) => row.length).sort((a, b) => b - a)[0]; // Sort descending, take first.
+    return table.map((row: any[]) => {
+      const newRow: string[] = [];
+      for (let i = 0; i < tableWidth; i++) {
+        newRow[i] = ((row[i] ?? "") + "").trim();
+      }
+      return newRow;
+    });
   }
 
   private whichInOrder(i: number, total: number | any[]): OrderWhich {
@@ -224,11 +237,4 @@ export default class PrettyTable {
       return OrderWhich.Last;
     }
   }
-}
-
-interface PrettyTableConfigWithDefaults {
-  output: Deno.Writer & Deno.WriterSync & Deno.Closer;
-  spacing: number;
-  padding: number;
-  border: boolean;
 }
