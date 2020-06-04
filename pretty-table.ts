@@ -7,6 +7,7 @@ interface PrettyTableConfigWithDefaults {
   spacing: number;
   padding: number;
   border: boolean;
+  innerBorder: boolean;
 }
 
 type RawTable = any[][];
@@ -28,6 +29,7 @@ export default class PrettyTable {
     }
 
     this.conf.border = conf.border ?? false;
+    this.conf.innerBorder = conf.innerBorder ?? true;
   }
 
   public async write(rawTable: RawTable): Promise<void> {
@@ -41,19 +43,9 @@ export default class PrettyTable {
 
       if (this.conf.border) {
         if (this.whichInOrder(i, table) === OrderWhich.First) {
-          await this.writeBorderRow(
-            widths,
-            OrderWhich.First,
-            Border.TopRight,
-            Border.TopLeft
-          );
-        } else {
-          await this.writeBorderRow(
-            widths,
-            OrderWhich.Intermediate,
-            Border.VerticalRight,
-            Border.VerticalLeft
-          );
+          await this.writeBorderRow(widths, OrderWhich.First);
+        } else if (this.conf.innerBorder) {
+          await this.writeBorderRow(widths, OrderWhich.Intermediate);
         }
       }
 
@@ -70,7 +62,7 @@ export default class PrettyTable {
             this.conf.padding,
             " ",
             Border.Vertical,
-            Border.Vertical
+            this.conf.innerBorder ? Border.Vertical : undefined
           );
         } else if (this.whichInOrder(j, widths) === OrderWhich.Intermediate) {
           await this.writeCol(
@@ -80,7 +72,7 @@ export default class PrettyTable {
             this.conf.border ? this.conf.padding : this.conf.spacing,
             " ",
             undefined,
-            Border.Vertical
+            this.conf.innerBorder ? Border.Vertical : undefined
           );
         } else {
           await this.writeCol(
@@ -98,12 +90,7 @@ export default class PrettyTable {
       if (this.conf.border) {
         if (this.whichInOrder(i, table) === OrderWhich.Last) {
           await this.writeText(`\n`);
-          await this.writeBorderRow(
-            widths,
-            OrderWhich.Last,
-            Border.BottomRight,
-            Border.BottomLeft
-          );
+          await this.writeBorderRow(widths, OrderWhich.Last);
         }
       }
     }
@@ -111,16 +98,29 @@ export default class PrettyTable {
 
   private async writeBorderRow(
     contentWidths: number[],
-    rowWhich: OrderWhich,
-    beforeString: string,
-    afterString: string
+    rowWhich: OrderWhich
   ): Promise<void> {
     const numberOfCols = contentWidths.length;
-    let betweenString = Border.HorizontalDown;
-    if (rowWhich === OrderWhich.Intermediate) {
+    let betweenString: string = this.conf.innerBorder
+      ? Border.HorizontalDown
+      : "";
+    let padString: string = Border.Horizontal;
+
+    let beforeString: string = Border.VerticalRight;
+    let afterString: string = Border.VerticalLeft;
+
+    if (rowWhich === OrderWhich.First) {
+      beforeString = Border.TopRight;
+      afterString = Border.TopLeft;
+    } else if (rowWhich === OrderWhich.Intermediate) {
+      beforeString = Border.VerticalRight;
+      afterString = Border.VerticalLeft;
+
       betweenString = Border.Cross;
     } else if (rowWhich === OrderWhich.Last) {
-      betweenString = Border.HorizontalUp;
+      betweenString = this.conf.innerBorder ? Border.HorizontalUp : "";
+      beforeString = Border.BottomRight;
+      afterString = Border.BottomLeft;
     }
 
     for (let i = 0; i < numberOfCols; i++) {
@@ -130,7 +130,7 @@ export default class PrettyTable {
           contentWidths[i],
           this.conf.padding,
           this.conf.padding,
-          Border.Horizontal,
+          padString,
           beforeString
         );
       } else if (
@@ -141,7 +141,7 @@ export default class PrettyTable {
           contentWidths[i],
           this.conf.padding,
           this.conf.padding,
-          Border.Horizontal,
+          padString,
           betweenString
         );
       } else {
@@ -150,7 +150,7 @@ export default class PrettyTable {
           contentWidths[i],
           this.conf.padding,
           this.conf.padding,
-          Border.Horizontal,
+          padString,
           betweenString,
           afterString
         );

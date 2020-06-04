@@ -3,4 +3,5 @@ export interface PrettyTableConfig {
   spacing?: number;
   padding?: number;
   border?: boolean;
+  innerBorder?: boolean;
 }

@@ -112,6 +112,34 @@ Deno.test("Bordered table with padding and spacing", async () => {
 `);
 });
 
+Deno.test("Bordered table with padding and spacing", async () => {
+  const f = await createFile();
+  const t = new Table({ output: f.file, border: true, innerBorder: false });
+
+  await t.write([
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["with"],
+    ["no", "inner", "border"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+          tableText,
+      `\
+┏━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ hello   world  !      ┃
+┃ this    is     a      ┃
+┃ pretty         table  ┃
+┃ with                  ┃
+┃ no      inner  border ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━┛
+`);
+});
+
 Deno.test("Basic table with spacing", async () => {
   const f = await createFile();
   const t = new Table({ output: f.file, spacing: 3 });
