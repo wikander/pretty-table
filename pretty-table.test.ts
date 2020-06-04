@@ -112,7 +112,7 @@ Deno.test("Bordered table with padding and spacing", async () => {
 `);
 });
 
-Deno.test("Bordered table with padding and spacing", async () => {
+Deno.test("Bordered table with no inner borders", async () => {
   const f = await createFile();
   const t = new Table({ output: f.file, border: true, innerBorder: false });
 
@@ -137,6 +137,72 @@ Deno.test("Bordered table with padding and spacing", async () => {
 ┃ with                  ┃
 ┃ no      inner  border ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+`);
+});
+
+Deno.test("Bordered table with only horizontal inner borders", async () => {
+  const f = await createFile();
+  const t = new Table({
+    output: f.file,
+    border: true,
+    innerVerticalBorder: false,
+  });
+
+  await t.write([
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["with"],
+    ["only", "horizontal", "borders"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+            tableText,
+        `\
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ hello   world       !       ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ this    is          a       ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ pretty              table   ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ with                        ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ only    horizontal  borders ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+`);
+});
+
+Deno.test("Bordered table with only vertical inner borders", async () => {
+  const f = await createFile();
+  const t = new Table({
+    output: f.file,
+    border: true,
+    innerHorizontalBorder: false,
+  });
+
+  await t.write([
+    ["hello", "world", "!"],
+    ["this", "is", "a"],
+    ["pretty", "", "table"],
+    ["only", "vertical", "borders"],
+  ]);
+
+  const tableText = await readFileContent(f);
+
+  // prettier-ignore
+  assertEquals(
+              tableText,
+          `\
+┏━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┓
+┃ hello  ┃ world    ┃ !       ┃
+┃ this   ┃ is       ┃ a       ┃
+┃ pretty ┃          ┃ table   ┃
+┃ only   ┃ vertical ┃ borders ┃
+┗━━━━━━━━┻━━━━━━━━━━┻━━━━━━━━━┛
 `);
 });
 

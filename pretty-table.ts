@@ -8,6 +8,8 @@ interface PrettyTableConfigWithDefaults {
   padding: number;
   border: boolean;
   innerBorder: boolean;
+  innerVerticalBorder: boolean;
+  innerHorizontalBorder: boolean;
 }
 
 type RawTable = any[][];
@@ -30,6 +32,13 @@ export default class PrettyTable {
 
     this.conf.border = conf.border ?? false;
     this.conf.innerBorder = conf.innerBorder ?? true;
+    this.conf.innerVerticalBorder = conf.innerVerticalBorder ?? true;
+    this.conf.innerHorizontalBorder = conf.innerHorizontalBorder ?? true;
+
+    if (!this.conf.innerBorder) {
+      this.conf.innerVerticalBorder = false;
+      this.conf.innerHorizontalBorder = false;
+    }
   }
 
   public async write(rawTable: RawTable): Promise<void> {
@@ -44,7 +53,7 @@ export default class PrettyTable {
       if (this.conf.border) {
         if (this.whichInOrder(i, table) === OrderWhich.First) {
           await this.writeBorderRow(widths, OrderWhich.First);
-        } else if (this.conf.innerBorder) {
+        } else if (this.conf.innerHorizontalBorder) {
           await this.writeBorderRow(widths, OrderWhich.Intermediate);
         }
       }
@@ -62,7 +71,7 @@ export default class PrettyTable {
             this.conf.padding,
             " ",
             Border.Vertical,
-            this.conf.innerBorder ? Border.Vertical : undefined
+            this.conf.innerVerticalBorder ? Border.Vertical : undefined
           );
         } else if (this.whichInOrder(j, widths) === OrderWhich.Intermediate) {
           await this.writeCol(
@@ -72,7 +81,7 @@ export default class PrettyTable {
             this.conf.border ? this.conf.padding : this.conf.spacing,
             " ",
             undefined,
-            this.conf.innerBorder ? Border.Vertical : undefined
+            this.conf.innerVerticalBorder ? Border.Vertical : undefined
           );
         } else {
           await this.writeCol(
@@ -89,7 +98,7 @@ export default class PrettyTable {
 
       if (this.conf.border) {
         if (this.whichInOrder(i, table) === OrderWhich.Last) {
-          await this.writeText(`\n`);
+          await this.newLine();
           await this.writeBorderRow(widths, OrderWhich.Last);
         }
       }
@@ -101,7 +110,7 @@ export default class PrettyTable {
     rowWhich: OrderWhich
   ): Promise<void> {
     const numberOfCols = contentWidths.length;
-    let betweenString: string = this.conf.innerBorder
+    let betweenString: string = this.conf.innerVerticalBorder
       ? Border.HorizontalDown
       : "";
     let padString: string = Border.Horizontal;
@@ -116,9 +125,9 @@ export default class PrettyTable {
       beforeString = Border.VerticalRight;
       afterString = Border.VerticalLeft;
 
-      betweenString = Border.Cross;
+      betweenString = this.conf.innerVerticalBorder ? Border.Cross : "";
     } else if (rowWhich === OrderWhich.Last) {
-      betweenString = this.conf.innerBorder ? Border.HorizontalUp : "";
+      betweenString = this.conf.innerVerticalBorder ? Border.HorizontalUp : "";
       beforeString = Border.BottomRight;
       afterString = Border.BottomLeft;
     }

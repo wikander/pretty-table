@@ -4,4 +4,6 @@ export interface PrettyTableConfig {
   padding?: number;
   border?: boolean;
   innerBorder?: boolean;
+  innerVerticalBorder?: boolean;
+  innerHorizontalBorder?: boolean;
 }
